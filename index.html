@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GPT-KFAI</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/onsenui/css/onsenui.css">
+    <link rel="stylesheet" href="https://unpkg.com/onsenui/css/onsen-css-components.min.css">
+    <script src="https://unpkg.com/onsenui/js/onsenui.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 90%;
+            width: 100%;
+            padding: 20px;
+            background: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            min-height: 80vh;
+            overflow-y: auto;
+        }
+        .title {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .title h3 {
+            margin: 0;
+            padding: 5px;
+            background: linear-gradient(90deg, #5cb85c, #4cae4c);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: fadeIn 3s ease-in-out;
+            font-size: 2rem;
+        }
+        .form-group {
+            margin-bottom: 15px;
+            flex: 1;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 1rem;
+        }
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            resize: none;
+            min-height: 100px;
+        }
+        .btn, .copy-btn {
+            background: #5cb85c;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            text-align: center;
+            width: 100%;
+        }
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .typing-indicator {
+            display: none;
+            font-style: italic;
+            color: #aaa;
+            margin-top: 10px;
+            text-align: center;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+        .response {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+            word-wrap: break-word;
+            display: none;
+        }
+        .response pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .btn {
+            flex: 1;
+            transition: flex 0.3s ease;
+        }
+
+        .copy-btn {
+            flex: 1;
+            display: none;
+            transition: flex 0.3s ease;
+        }
+
+        .button-container.single-btn .btn {
+            flex: 2;
+        }
+
+        .button-container.double-btn .btn {
+            flex: 1;
+        }
+    </style>
+    <link rel="manifest" href="/manifest.json">
+</head>
+<body>
+    <div class="container">
+        <div class="title">
+            <h3>GPT-KFAI</h3>
+            <p>Selamat, Pengguna!</p>
+        </div>
+        <form id="apiForm">
+            <div class="form-group">
+                <label for="input_text">Input Text:</label>
+                <textarea id="input_text" name="input_text" rows="4" required></textarea>
+            </div>
+            <div class="button-container single-btn">
+                <button type="submit" class="btn" id="submitButton">Submit</button>
+                <button type="button" class="copy-btn" onclick="copyToClipboard()">Copy</button>
+            </div>
+            <div class="typing-indicator">Connecting to the server...</div>
+            <div class="response" id="response">
+                <pre class="response-content" id="responseContent"></pre>
+            </div>
+        </form>
+    </div>
+    <script>
+        document.getElementById("apiForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+            var form = event.target;
+            var formData = new FormData(form);
+            var responseDiv = document.getElementById("response");
+            var responseContent = document.getElementById("responseContent");
+            var typingIndicator = document.querySelector(".typing-indicator");
+            var submitButton = document.getElementById("submitButton");
+            var copyButton = document.querySelector(".copy-btn");
+            var buttonContainer = document.querySelector(".button-container");
+
+            typingIndicator.style.display = "block";
+            submitButton.disabled = true;
+            copyButton.style.display = "none";
+            buttonContainer.classList.add('single-btn');
+
+            setTimeout(function() {
+                fetch('https://api.shx.my.id', { // Replace 'your-api-endpoint' with your actual endpoint
+                    method: "POST",
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    typingIndicator.style.display = "none";
+                    responseDiv.style.display = "block";
+                    responseContent.innerHTML = data.response;
+                    copyButton.style.display = "block";
+                    buttonContainer.classList.remove('single-btn');
+                    buttonContainer.classList.add('double-btn');
+                })
+                .catch(error => {
+                    typingIndicator.style.display = "none";
+                    alert("Error: " + error);
+                })
+                .finally(() => {
+                    submitButton.disabled = false;
+                });
+            }, 10); // Sesuaikan dengan permintaan Anda
+        });
+
+        function copyToClipboard() {
+            var responseContent = document.getElementById("responseContent"); 
+            navigator.clipboard.writeText(responseContent.innerText).then(() => {
+                ons.notification.toast('Response copied to clipboard!', {
+                    timeout: 2000,
+                    animation: 'fall'
+                });
+            });
+        }
+    </script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+            .then(function() {
+                console.log('Service Worker Registered');
+            });
+        }
+    </script>
+</body>
+</html>
